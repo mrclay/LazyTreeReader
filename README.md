@@ -4,17 +4,17 @@ This is a PHP5.3 library designed to help you work with partial trees of nodes. 
 
 ## Design
 
-The Backend class is abstract and must be extended to implement methods allowing the system to fetch node/relationship/attributes when needed. This allows the library to support any backend representation of a tree (the only limitation is that each node must have a unique string id) and for you to optimize your requests (e.g. load multiple nodes at a time).
+The IBackend interface requires you to implement methods allowing the system to fetch tree data when needed. This allows the library to support any backend representation of a tree (the only limitation is that each node must have a unique string id) and for you to optimize your requests (e.g. load multiple nodes at a time).
 
-The built-in Node class (extensible) is lightweight--it only knows its "id". You add a populate() method to your backend to add properties to the node from storage. As you traverse nodes, the nodes call the backend as necessary to supply the parent/children if not already known.
+The built-in Node class (extensible) is lightweight--it only knows its "id", but knows how to use the backend to load attributes and related nodes as needed.
 
-The Cache holds references to all known-about nodes, and can be serialized between requests and re-attached to the backend later. By forcing all node lookups through the cache (you can't directly set a node's parent/children), you make sure that all parent/child node references are propertly transitive; you can start building up the cache from the top and bottom of the tree and the nodes will connect properly when they meet.
+The Cache holds references to all known-about nodes, and can be serialized between requests and re-attached to the backend later. By forcing all node look-ups through the cache (you can't directly set a node's parent/children), you make sure that all parent/child node references are properly transitive; you can start building up the cache from the top and bottom of the tree and the nodes will connect properly when they meet.
 
-## Known Flaws
+## Limitations
 
-* The cache can only increase in size as new nodes are known about and populated, so the user will have to manually clear the cache when/if it gets big.
+* You must manage the size of the cached nodes and their attributes. The node has methods to "forget" attributes and relationships or you can remove nodes completely from the cache. Worst case you can clear the cache.
 * The cache and nodes are designed to be static representations of a static backend tree, so there's no built-in mechanism to monitor changes in the backend, move/remove nodes, etc. All you can do is clear the cache periodically or when you suspect the tree/nodes have changed.
-* The populate() method is a clunky way of loading the node's attributes. Node should probably come with a lazy-loading attributes system, but I got lazy.
+* The strategy for loading/ordering child nodes is clunky.
 
 ## License
 

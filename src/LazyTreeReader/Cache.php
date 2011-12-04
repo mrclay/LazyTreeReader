@@ -2,7 +2,7 @@
 
 namespace LazyTreeReader;
 
-use LazyTreeReader\Backend;
+use LazyTreeReader\IBackend;
 use LazyTreeReader\Node;
 
 /**
@@ -17,7 +17,7 @@ class Cache {
 
     /**
      * Note, this property is not serialized
-     * @var Backend
+     * @var IBackend
      */
     protected $_backend;
 
@@ -27,18 +27,18 @@ class Cache {
     protected $_nodesById = array();
 
     /**
-     * @param Backend $backend
+     * @param IBackend $backend
      */
-    public function __construct(Backend $backend)
+    public function __construct(IBackend $backend)
     {
         $this->setBackend($backend);
     }
 
     /**
-     * @param Backend $backend
+     * @param IBackend $backend
      * @return Cache
      */
-    public function setBackend(Backend $backend)
+    public function setBackend(IBackend $backend)
     {
         $this->_backend = $backend;
         $backend->setCache($this);
@@ -46,7 +46,7 @@ class Cache {
     }
     
     /**
-     * @return Backend
+     * @return IBackend
      */
     public function getBackend()
     {
@@ -64,13 +64,13 @@ class Cache {
     }
 
     /**
-     * Get a node or null from the cache. If we don't know of its existence, check the backend.
+     * Fetch a node from the backend (or the cache if available)
      * @param string $id
      * @return Node|null
      */
-    public function getNodeById($id)
+    public function fetchNodeById($id)
     {
-        if (! isset($this->_nodesById[$id])) {
+        if (! array_key_exists($id, $this->_nodesById)) {
             $this->setNodeExistence($id, $this->_backend->nodeExists($id));
         }
         return $this->_nodesById[$id];
@@ -85,7 +85,7 @@ class Cache {
      */
     public function setNodeExistence($id, $exists)
     {
-        if (! isset($this->_nodesById[$id])) {
+        if (! array_key_exists($id, $this->_nodesById)) {
             if ($exists) {
                 $node = $this->_backend->createEmptyNode($id);
                 $node->setCache($this);
@@ -95,6 +95,35 @@ class Cache {
             }
         }
         return $this->_nodesById[$id];
+    }
+
+    /**
+     * @return array
+     */
+    public function getCachedNodes()
+    {
+        return $this->_nodesById;
+    }
+
+    /**
+     * @param Node $node
+     * @param bool $removeEntireBranch
+     * @return Cache
+     */
+    public function removeNode(Node $node, $removeEntireBranch = false)
+    {
+        if ($removeEntireBranch) {
+            foreach ($node->getKnownChildNodes() as $child) {
+                $this->removeNode($child, true);
+            }
+        }
+        // remove references to the node so can be CGed
+        $node->forgetParent();
+        $node->forgetAllChildren();
+        $node->forgetPreviousSibling();
+        $node->forgetNextSibling();
+        unset($this->_nodesById[$node->getId()]);
+        return $this;
     }
 
     /**
