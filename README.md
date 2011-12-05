@@ -1,10 +1,10 @@
 # LazyTreeReader
 
-This is a PHP5.3 library designed to help you work with partial trees of nodes. E.g. You have a tree so large that loading the tree in memory would be impractical/impossible/slow, but it would be useful to access and traverse smaller portions of it. LazyTreeReader is a framework for loading unknown nodes and relationships only when needed.
+This is a PHP 5.3 library designed to lazily read nodes, and their relationships and attributes from a static hierarchical tree. E.g. You have a tree so large that loading the tree in memory would be impractical/impossible/slow, but it would be useful to access and traverse a portion of it.
 
 ## Design
 
-The IBackend interface requires you to implement methods allowing the system to fetch tree data when needed. This allows the library to support any backend representation of a tree (the only limitation is that each node must have a unique string id) and for you to optimize your requests (e.g. load multiple nodes at a time).
+The IBackend interface requires you to implement methods allowing the system to fetch tree data when needed. This allows the library to support any backend representation of a tree (the only limitation is that each node must map to a unique string identifier) and allows you to optimize your requests to make the most of expensive backend calls (e.g. you may want to preemptively load attributes for returned nodes).
 
 The built-in Node class (extensible) is lightweight--it only knows its "id", but knows how to use the backend to load attributes and related nodes as needed.
 
